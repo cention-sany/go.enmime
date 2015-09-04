@@ -8,9 +8,10 @@ import (
 	"io"
 	"mime"
 	"mime/multipart"
-	"mime/quotedprintable"
 	"net/textproto"
 	"strings"
+
+	"github.com/sloonz/go-qprintable"
 )
 
 // MIMEPart is the primary interface enmine clients will use.  Each MIMEPart represents
@@ -224,7 +225,8 @@ func decodeSection(encoding string, reader io.Reader) ([]byte, error) {
 
 	switch strings.ToLower(encoding) {
 	case "quoted-printable":
-		decoder = quotedprintable.NewReader(reader)
+		qprintable.NewDecoder(qprintable.WindowsTextEncoding, reader)
+		//decoder = quotedprintable.NewReader(reader)
 	case "base64":
 		cleaner := NewBase64Cleaner(reader)
 		decoder = base64.NewDecoder(base64.StdEncoding, cleaner)
