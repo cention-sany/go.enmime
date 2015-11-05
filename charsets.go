@@ -3,6 +3,9 @@ package enmime
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"strings"
+
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/encoding/japanese"
@@ -11,8 +14,6 @@ import (
 	"golang.org/x/text/encoding/traditionalchinese"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
-	"io/ioutil"
-	"strings"
 )
 
 /* copy from golang.org/x/net/html/charset/table.go */
@@ -20,9 +21,10 @@ var encodings = map[string]struct {
 	e    encoding.Encoding
 	name string
 }{
-	"unicode-1-1-utf-8":   {encoding.Nop, "utf-8"},
-	"utf-8":               {encoding.Nop, "utf-8"},
-	"utf8":                {encoding.Nop, "utf-8"},
+	"unicode-1-1-utf-8": {encoding.Nop, "utf-8"},
+	"utf-8":             {encoding.Nop, "utf-8"},
+	"utf8":              {encoding.Nop, "utf-8"},
+	//"utf7":                {UTF7, "utf-7"},
 	"866":                 {charmap.CodePage866, "ibm866"},
 	"cp866":               {charmap.CodePage866, "ibm866"},
 	"csibm866":            {charmap.CodePage866, "ibm866"},
@@ -244,6 +246,9 @@ func ConvertToUTF8String(charset, text string) (string, error) {
 	}
 	item, ok := encodings[strings.ToLower(charset)]
 	if !ok {
+		if strings.ToLower(charset) == "utf-7" {
+			return UTF7Decode(text)
+		}
 		return "", fmt.Errorf("Unsupport charset %s", charset)
 	}
 	input := bytes.NewReader([]byte(text))
