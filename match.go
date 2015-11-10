@@ -88,6 +88,9 @@ func DepthMatchAll(p MIMEPart, matcher MIMEPartMatcher) []MIMEPart {
 	root := p
 	matches := make([]MIMEPart, 0, 10)
 	for {
+		if p == nil {
+			return matches
+		}
 		if matcher(p) {
 			matches = append(matches, p)
 		}
