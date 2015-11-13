@@ -3,15 +3,16 @@ package enmime
 import (
 	"bufio"
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"io"
 	"mime"
-	"mime/multipart"
+	//"mime/multipart"
+	//"mime/quotedprintable"
 	"net/textproto"
 	"strings"
 
-	"github.com/cention-sany/quotedprintable"
+	"github.com/cention-sany/mime/multipart"
+	"github.com/cention-sany/mime/quotedprintable"
 )
 
 // MIMEPart is the primary interface enmine clients will use.  Each MIMEPart represents
@@ -227,8 +228,9 @@ func decodeSection(encoding string, reader io.Reader) ([]byte, error) {
 	case "quoted-printable":
 		decoder = quotedprintable.NewReader(reader)
 	case "base64":
-		cleaner := NewBase64Cleaner(reader)
-		decoder = base64.NewDecoder(base64.StdEncoding, cleaner)
+		// cleaner := NewBase64Cleaner(reader)
+		// decoder = base64.NewDecoder(base64.StdEncoding, cleaner)
+		decoder = NewBase64Combiner(reader)
 	}
 
 	// Read bytes into buffer
