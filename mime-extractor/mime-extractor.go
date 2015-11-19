@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/jhillyerd/go.enmime"
 	"io"
 	"net/mail"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/cention-sany/go.enmime"
 )
 
 var (
