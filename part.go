@@ -5,12 +5,12 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"mime"
 	//"mime/multipart"
 	//"mime/quotedprintable"
 	"net/textproto"
 	"strings"
 
+	"github.com/cention-sany/mime"
 	"github.com/cention-sany/mime/multipart"
 	"github.com/cention-sany/mime/quotedprintable"
 )
@@ -107,7 +107,7 @@ func ParseMIME(reader *bufio.Reader) (MIMEPart, error) {
 		return nil, err
 	}
 	mediatype, params, err := mime.ParseMediaType(header.Get("Content-Type"))
-	if err != nil {
+	if err != nil && err != mime.BuggyMediaType {
 		return nil, err
 	}
 	root := &memMIMEPart{header: header, contentType: mediatype}
@@ -166,7 +166,7 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 			return fmt.Errorf("Missing Content-Type at boundary %v", boundary)
 		}
 		mediatype, mparams, err := mime.ParseMediaType(ctype)
-		if err != nil {
+		if err != nil && err != mime.BuggyMediaType {
 			return err
 		}
 
@@ -182,7 +182,7 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 
 		// Figure out our disposition, filename
 		disposition, dparams, err := mime.ParseMediaType(mrp.Header.Get("Content-Disposition"))
-		if err == nil {
+		if err == nil || err == mime.BuggyMediaType {
 			// Disposition is optional
 			p.disposition = disposition
 			p.fileName = DecodeHeader(dparams["filename"])

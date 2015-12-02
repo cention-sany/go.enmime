@@ -2,9 +2,10 @@ package enmime
 
 import (
 	"fmt"
-	"mime"
 	"net/mail"
 	"strings"
+
+	"github.com/cention-sany/mime"
 )
 
 // MIMEBody is the outer wrapper for MIME messages.
@@ -27,7 +28,7 @@ func IsMultipartMessage(mailMsg *mail.Message) bool {
 	// Parse top-level multipart
 	ctype := mailMsg.Header.Get("Content-Type")
 	mediatype, _, err := mime.ParseMediaType(ctype)
-	if err != nil {
+	if err != nil && err != mime.BuggyMediaType {
 		return false
 	}
 	switch mediatype {
@@ -60,7 +61,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 		// Check for HTML at top-level, eat errors quietly
 		ctype := mailMsg.Header.Get("Content-Type")
 		if ctype != "" {
-			if mediatype, mparams, err := mime.ParseMediaType(ctype); err == nil {
+			if mediatype, mparams, err := mime.ParseMediaType(ctype); err == nil || err == mime.BuggyMediaType {
 				/*
 				 *Content-Type: text/plain;\t charset="hz-gb-2312"
 				 */
@@ -80,7 +81,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 		// Parse top-level multipart
 		ctype := mailMsg.Header.Get("Content-Type")
 		mediatype, params, err := mime.ParseMediaType(ctype)
-		if err != nil {
+		if err != nil && err != mime.BuggyMediaType {
 			return nil, fmt.Errorf("Unable to parse media type: %v", err)
 		}
 		if !strings.HasPrefix(mediatype, "multipart/") {
