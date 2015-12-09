@@ -2,6 +2,7 @@ package enmime
 
 import (
 	"fmt"
+	"log"
 	"net/mail"
 	"strings"
 
@@ -106,6 +107,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 
 		// Locate text body
 		if mediatype == "multipart/altern" {
+			log.Println("surPrise: should not be here go.enmime/mime.go")
 			match := BreadthMatchFirst(root, func(p MIMEPart) bool {
 				return p.ContentType() == "text/plain" && p.Disposition() != "attachment"
 			})
