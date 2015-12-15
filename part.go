@@ -130,6 +130,8 @@ func ParseMIME(reader *bufio.Reader) (MIMEPart, error) {
 	return root, nil
 }
 
+const default_content_type = "text/plain; charset=US-ASCII"
+
 // parseParts recursively parses a mime multipart document.
 func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 	var prevSibling *memMIMEPart
@@ -158,12 +160,15 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 					return fmt.Errorf("Error at boundary %v: %v", boundary, err)
 				}
 			}
-
-			return fmt.Errorf("Empty header at boundary %v", boundary)
+			// empty header field inside mime part body should not treat as error
+			//return fmt.Errorf("Empty header at boundary %v", boundary)
+			mrp.Header.Add("Content-Type", default_content_type)
 		}
 		ctype := mrp.Header.Get("Content-Type")
 		if ctype == "" {
-			return fmt.Errorf("Missing Content-Type at boundary %v", boundary)
+			// can not find Content-Type header does not mean error
+			//return fmt.Errorf("Missing Content-Type at boundary %v", boundary)
+			mrp.Header.Add("Content-Type", default_content_type)
 		}
 		mediatype, mparams, err := mime.ParseMediaType(ctype)
 		if err != nil && err != mime.BuggyMediaType {
