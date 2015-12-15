@@ -3,7 +3,6 @@ package enmime
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	//"mime/multipart"
 	//"mime/quotedprintable"
@@ -145,33 +144,50 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 			if err == io.EOF {
 				// This is a clean end-of-message signal
 				break
+			} else if strings.HasPrefix(err.Error(), "malformed MIME header") {
+				//log.Println("debug: malformed MIME header - ignore it")
+				mrp.Header.Add("Content-Type", default_content_type)
+			} else {
+				return err
 			}
-			return err
 		}
 		if len(mrp.Header) == 0 {
-			// Empty header probably means the part didn't using the correct trailing "--"
-			// syntax to close its boundary.  We will let this slide if this this the
-			// last MIME part.
-			if _, err := mr.NextPart(); err != nil {
-				if err == io.EOF || strings.HasSuffix(err.Error(), "EOF") {
-					// This is what we were hoping for
+			// // Empty header probably means the part didn't using the correct trailing "--"
+			// // syntax to close its boundary.  We will let this slide if this this the
+			// // last MIME part.
+			// if _, err := mr.NextPart(); err != nil {
+			// 	if err == io.EOF || strings.HasSuffix(err.Error(), "EOF") {
+			// 		// This is what we were hoping for
+			// 		break
+			// 	} else {
+			// 		return fmt.Errorf("Error at boundary %v: %v", boundary, err)
+			// 	}
+			// }
+			// return fmt.Errorf("Empty header at boundary %v", boundary)
+
+			if errEOF := mr.CheckNextPart(); errEOF != nil {
+				if errEOF == io.EOF || strings.HasSuffix(errEOF.Error(), "EOF") {
+					// This is what we were hoping for. And to remain the ability
+					// to detect the empty MIME header caused by improper boundary
+					// ending.
 					break
-				} else {
-					return fmt.Errorf("Error at boundary %v: %v", boundary, err)
 				}
 			}
-			// empty header field inside mime part body should not treat as error
-			//return fmt.Errorf("Empty header at boundary %v", boundary)
+			// empty header field inside mime part body should not treat as error as
+			// MIME is allowed to have empty header and straight to the body content.
 			mrp.Header.Add("Content-Type", default_content_type)
 		}
 		ctype := mrp.Header.Get("Content-Type")
 		if ctype == "" {
 			// can not find Content-Type header does not mean error
 			//return fmt.Errorf("Missing Content-Type at boundary %v", boundary)
+			//log.Println("debug: can not found content-type - use default")
 			mrp.Header.Add("Content-Type", default_content_type)
+			ctype = mrp.Header.Get("Content-Type")
 		}
 		mediatype, mparams, err := mime.ParseMediaType(ctype)
 		if err != nil && err != mime.BuggyMediaType {
+			//log.Println("debug: parse parts media type error")
 			return err
 		}
 
