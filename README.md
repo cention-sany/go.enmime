@@ -22,3 +22,7 @@ enmime is open source software released under the MIT License.  The latest
 version can be found at https://github.com/jhillyerd/go.enmime
 
 [1]: http://golang.org/
+
+Forked Version
+--------------
+enmime is forked to use forked stdlib mime, multipart and quotedprintable packages in order to parse some bad email format. This will increase chances to parse emails successfully.
