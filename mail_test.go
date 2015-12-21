@@ -227,6 +227,63 @@ func TestParseEncodedSubjectAndAddress(t *testing.T) {
 	assert.Equal(t, "Mirosław Marczak", toAddresses[0].Name)
 }
 
+// new test mail from forked version
+func TestParseMultiAnyText(t *testing.T) {
+	msg := readMessage("mime-any.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+
+	assert.Equal(t, "Section one\n\n--\nSection two", mime.Text,
+		"Text parts should be concatenated")
+}
+
+func TestParseMimeNoHeader(t *testing.T) {
+	msg := readMessage("mime-noheader.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+
+	assert.Equal(t, "first partial message\n", mime.Text, "Text parts should be parsed as plain text")
+	if assert.Equal(t, 2, len(mime.OtherParts), "Should have two inlines") {
+		assert.Equal(t, "second message\n", string(mime.OtherParts[0].Content()), "First attachment should has plain text")
+		assert.Equal(t, "empty\n", string(mime.OtherParts[1].Content()), "Second attachment should has plain text")
+	}
+}
+
+func TestParseMimeCorruptHeader(t *testing.T) {
+	msg := readMessage("mime-corrupt-header.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+
+	assert.Equal(t, "first msg\n\n--\nsecond msg\n\n--\nthird msg\n", mime.Text, "Corrupted text message should be concanated as plain text")
+}
+
+func TestParseMimeCorruptHeader2(t *testing.T) {
+	msg := readMessage("mime-corrupt-header2.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+
+	assert.Equal(t, "first msg\n\n--\nsecond msg\n", mime.Text, "Corrupted text message should be concanated as plain text")
+	assert.Equal(t, "<b>third msg</b>\n", mime.Html, "There should has html text")
+}
+
+func TestParseMimeMultiEmpty(t *testing.T) {
+	msg := readMessage("mime-multi-empty.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+
+	assert.Empty(t, mime.Text, "Expected empty text part")
+}
+
 // readMessage is a test utility function to fetch a mail.Message object.
 func readMessage(filename string) *mail.Message {
 	// Open test email for parsing

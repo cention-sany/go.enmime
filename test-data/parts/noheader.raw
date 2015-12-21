@@ -1,0 +1,12 @@
+Content-Type: multipart/alternative; boundary="Enmime-Test-101"
+
+--Enmime-Test-101
+
+A text section
+--Enmime-Test-101
+Content-Transfer-Encoding: 7bit
+Content-Type: text/html; charset=us-ascii
+
+An HTML section
+--Enmime-Test-101--
+

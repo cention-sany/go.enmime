@@ -1,0 +1,34 @@
+Message-ID: <5081A889.3020108@jamehi03lx.noa.com>
+Date: Fri, 19 Oct 2012 12:22:49 -0700
+From: James Hillyerd <jamehi03@jamehi03lx.noa.com>
+User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20121010 Thunderbird/16.0.1
+MIME-Version: 1.0
+To: greg@inbucket.com
+Subject: Returned mail: see transcript for details
+Content-Type: multipart/report; report-type=delivery-status;
+	boundary="tBBMXmDB006903.1449873228/sss3.lala.com"
+Auto-Submitted: auto-generated (failure)
+X-Nonspam: None
+
+This is a MIME-encapsulated message
+
+--tBBMXmDB006903.1449873228/sss3.lala.com
+Content-Lala: message/delivery-status
+
+first msg
+
+--tBBMXmDB006903.1449873228/sss3.lala.com
+Lala-Unknown: multipart/mixed
+
+second msg
+
+--tBBMXmDB006903.1449873228/sss3.lala.com
+Message unexpectedly started here will be ignored as
+Content-Type: text/html
+this is for Content-Type and multiple lines
+One Two Three
+
+<b>third msg</b>
+
+--tBBMXmDB006903.1449873228/sss3.lala.com--
+

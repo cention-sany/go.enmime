@@ -226,6 +226,82 @@ func TestBadBoundaryTerm(t *testing.T) {
 	assert.Nil(t, p.NextSibling(), "Second child should not have a sibling")
 }
 
+// new tests from forked version
+func TestNoHeaderPart(t *testing.T) {
+	r := openPart("noheader.raw")
+	p, err := ParseMIME(r)
+
+	// Examine root
+	if !assert.Nil(t, err, "Parsing should not have generated an error") {
+		t.FailNow()
+	}
+	assert.NotNil(t, p, "Root node should not be nil")
+	assert.Equal(t, "multipart/alternative", p.ContentType(), "Expected type to be set")
+
+	// Examine first child
+	p = p.FirstChild()
+	assert.Equal(t, "text/plain", p.ContentType(), "First child should have been default text")
+	assert.Contains(t, string(p.Content()), "A text section", "First child contains wrong content")
+	assert.NotNil(t, p.NextSibling(), "First child should have a sibling")
+
+	// Examine sibling
+	p = p.NextSibling()
+	assert.Equal(t, "text/html", p.ContentType(), "Second child should have been html")
+	assert.Contains(t, string(p.Content()), "An HTML section", "Second child contains wrong content")
+	assert.Nil(t, p.NextSibling(), "Second child should not have a sibling")
+}
+
+func TestCorruptHeaderPart(t *testing.T) {
+	r := openPart("corruptheader.raw")
+	p, err := ParseMIME(r)
+
+	// Examine root
+	if !assert.Nil(t, err, "Parsing should not have generated an error") {
+		t.FailNow()
+	}
+	assert.NotNil(t, p, "Root node should not be nil")
+	assert.Equal(t, "multipart/mixed", p.ContentType(), "Expected type to be set")
+
+	// Examine first child
+	p = p.FirstChild()
+	assert.Equal(t, "text/plain", p.ContentType(), "First child should have been default text")
+	assert.Contains(t, string(p.Content()), "A text section", "First child contains wrong content")
+	assert.NotNil(t, p.NextSibling(), "First child should have a sibling")
+
+	// Examine sibling
+	p = p.NextSibling()
+	assert.Equal(t, "text/plain", p.ContentType(), "Second child should have been default to text")
+	assert.Contains(t, string(p.Content()), "An HTML section", "Second child contains wrong content")
+	assert.Nil(t, p.NextSibling(), "Second child should not have a sibling")
+}
+
+func TestMultiAnyParts(t *testing.T) {
+	r := openPart("multiany.raw")
+	p, err := ParseMIME(r)
+
+	// Examine root
+	if !assert.Nil(t, err, "Parsing should not have generated an error") {
+		t.FailNow()
+	}
+	assert.NotNil(t, p, "Root node should not be nil")
+	assert.Equal(t, "multipart/reports", p.ContentType(), "Expected type to be set")
+	assert.Equal(t, 0, len(p.Content()), "Root should not have Content")
+	assert.NotNil(t, p.FirstChild(), "Root should have a FirstChild")
+	assert.Nil(t, p.NextSibling(), "Root should never have a sibling")
+
+	// Examine first child
+	p = p.FirstChild()
+	assert.Equal(t, "text/plain", p.ContentType(), "First child should have been text")
+	assert.Contains(t, string(p.Content()), "Section one", "First child contains wrong content")
+	assert.NotNil(t, p.NextSibling(), "First child should have a sibling")
+
+	// Examine sibling
+	p = p.NextSibling()
+	assert.Equal(t, "text/plain", p.ContentType(), "Second child should have been html")
+	assert.Contains(t, string(p.Content()), "Section two", "Second child contains wrong content")
+	assert.Nil(t, p.NextSibling(), "Second child should not have a sibling")
+}
+
 // openPart is a test utility function to open a part as a reader
 func openPart(filename string) *bufio.Reader {
 	// Open test part for parsing
