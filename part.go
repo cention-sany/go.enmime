@@ -6,12 +6,13 @@ import (
 	"io"
 	//"mime/multipart"
 	//"mime/quotedprintable"
-	"net/textproto"
+	//"net/textproto"
 	"strings"
 
 	"github.com/cention-sany/mime"
 	"github.com/cention-sany/mime/multipart"
 	"github.com/cention-sany/mime/quotedprintable"
+	"github.com/cention-sany/net/textproto"
 )
 
 // MIMEPart is the primary interface enmine clients will use.  Each MIMEPart represents
@@ -103,7 +104,9 @@ func ParseMIME(reader *bufio.Reader) (MIMEPart, error) {
 	tr := textproto.NewReader(reader)
 	header, err := tr.ReadMIMEHeader()
 	if err != nil {
-		return nil, err
+		if !strings.HasPrefix(err.Error(), "malformed MIME header") {
+			return nil, err
+		}
 	}
 	mediatype, params, err := mime.ParseMediaType(header.Get("Content-Type"))
 	if err != nil && err != mime.BuggyMediaType {
@@ -145,8 +148,14 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 				// This is a clean end-of-message signal
 				break
 			} else if strings.HasPrefix(err.Error(), "malformed MIME header") {
-				//log.Println("debug: malformed MIME header - ignore it")
-				mrp.Header.Add("Content-Type", default_content_type)
+				// ignore this type of error and continue to process and valid MIME header
+				//log.Println("debug: malformed MIME header - ignore it", len(mrp.Header))
+			} else if strings.HasSuffix(err.Error(), "EOF") {
+				//log.Println("debug: type of EOF failure:", err)
+				if mrp == nil {
+					//log.Println("debug: next part is empty")
+					break
+				}
 			} else {
 				return err
 			}
@@ -179,8 +188,9 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 		}
 		ctype := mrp.Header.Get("Content-Type")
 		if ctype == "" {
-			// can not find Content-Type header does not mean error
 			//return fmt.Errorf("Missing Content-Type at boundary %v", boundary)
+
+			// can not find Content-Type header does not mean error
 			//log.Println("debug: can not found content-type - use default")
 			mrp.Header.Add("Content-Type", default_content_type)
 			ctype = mrp.Header.Get("Content-Type")
