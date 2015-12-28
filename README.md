@@ -23,6 +23,6 @@ version can be found at https://github.com/jhillyerd/go.enmime
 
 [1]: http://golang.org/
 
-Forked Version
+Forked Version [![Build Status](https://travis-ci.org/cention-sany/go.enmime.png?branch=master)](https://travis-ci.org/cention-sany/go.enmime)
 --------------
 enmime is forked to use forked stdlib mime, multipart, quotedprintable and textproto packages in order to parse some bad email format. This will increase chances to parse emails successfully.
