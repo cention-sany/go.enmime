@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cention-sany/mime"
+	//"github.com/cention-sany/net/mail"
 )
 
 // MIMEBody is the outer wrapper for MIME messages.
@@ -53,6 +54,7 @@ func IsMultipartMessage(mailMsg *mail.Message) bool {
 // encoded in quoted-printable or base64, it is decoded before being stored in the
 // MIMEPart object.
 func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
+	var gerr error
 	mimeMsg := &MIMEBody{header: mailMsg.Header}
 
 	if !IsMultipartMessage(mailMsg) {
@@ -74,7 +76,11 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 				if mparams["charset"] != "" {
 					newStr, err := ConvertToUTF8String(mparams["charset"], mimeMsg.Text)
 					if err != nil {
-						return nil, err
+						if newStr == "" {
+							return nil, err
+						} else {
+							gerr = err
+						}
 					}
 					mimeMsg.Text = newStr
 				}
@@ -115,7 +121,11 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 				if match.Charset() != "" {
 					newStr, err := ConvertToUTF8String(match.Charset(), string(match.Content()))
 					if err != nil {
-						return nil, err
+						if newStr == "" {
+							return nil, err
+						} else {
+							gerr = err
+						}
 					}
 					mimeMsg.Text += newStr
 				} else {
@@ -134,7 +144,11 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 				if m.Charset() != "" {
 					newStr, err := ConvertToUTF8String(m.Charset(), string(m.Content()))
 					if err != nil {
-						return nil, err
+						if newStr == "" {
+							return nil, err
+						} else {
+							gerr = err
+						}
 					}
 					mimeMsg.Text += newStr
 				} else {
@@ -151,7 +165,11 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 			if match.Charset() != "" {
 				newStr, err := ConvertToUTF8String(match.Charset(), string(match.Content()))
 				if err != nil {
-					return nil, err
+					if newStr == "" {
+						return nil, err
+					} else {
+						gerr = err
+					}
 				}
 				mimeMsg.Html += newStr
 			} else {
@@ -188,7 +206,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 		})
 	}
 
-	return mimeMsg, nil
+	return mimeMsg, gerr
 }
 
 // Process the specified header for RFC 2047 encoded words and return the result

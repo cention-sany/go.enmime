@@ -248,7 +248,7 @@ func ConvertToUTF8String(charset, text string) (string, error) {
 	}
 	item, ok := encodings[strings.ToLower(charset)]
 	if !ok {
-		return "", fmt.Errorf("Unsupport charset %s", charset)
+		return text, fmt.Errorf("Unsupport charset %s", charset)
 	}
 	input := bytes.NewReader([]byte(text))
 	reader := transform.NewReader(input, item.e.NewDecoder())

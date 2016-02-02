@@ -259,7 +259,10 @@ func encTextState(h *headerDec) stateFn {
 		case r == '?':
 			if h.accept("=") {
 				text, err := convertText(h.charset, h.encoding, h.input[myStart:h.pos-2])
-				if err == nil {
+				if err == nil { // may put `|| text != ""` to default bad charset un-decode
+					// if err != nil { // bad charset conversion
+					// 	debug("%v", err)
+					// }
 					debug("Text converted to: %q", text)
 					if h.trans {
 						h.outbuf.WriteString("=?UTF-8?B?")
