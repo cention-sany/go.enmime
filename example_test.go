@@ -2,10 +2,11 @@ package enmime_test
 
 import (
 	"fmt"
-	"net/mail"
+	//"net/mail"
 	"os"
 
 	"github.com/cention-sany/go.enmime"
+	"github.com/cention-sany/net/mail"
 )
 
 func Example() {

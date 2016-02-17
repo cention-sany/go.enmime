@@ -3,12 +3,13 @@ package main
 import (
 	"fmt"
 	"io"
-	"net/mail"
+	//"net/mail"
 	"os"
 	"path"
 	"strings"
 
 	"github.com/cention-sany/go.enmime"
+	"github.com/cention-sany/net/mail"
 )
 
 func main() {

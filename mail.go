@@ -3,11 +3,11 @@ package enmime
 import (
 	"fmt"
 	"log"
-	"net/mail"
+	//"net/mail"
 	"strings"
 
 	"github.com/cention-sany/mime"
-	//"github.com/cention-sany/net/mail"
+	"github.com/cention-sany/net/mail"
 )
 
 // MIMEBody is the outer wrapper for MIME messages.

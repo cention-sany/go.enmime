@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"net/mail"
+	//"net/mail"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/cention-sany/net/mail"
 	"github.com/stretchr/testify/assert"
 )
 
