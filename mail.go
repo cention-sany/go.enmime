@@ -32,7 +32,7 @@ func IsMultipartMessage(mailMsg *mail.Message) bool {
 	// Parse top-level multipart
 	ctype := mailMsg.Header.Get("Content-Type")
 	mediatype, _, err := mime.ParseMediaType(ctype)
-	if err != nil && err != mime.BuggyMediaType {
+	if err != nil && mime.IsOkPMTError(err) != nil {
 		return false
 	}
 	switch mediatype {
@@ -179,7 +179,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 		// Check for HTML at top-level, eat errors quietly
 		ctype := mailMsg.Header.Get("Content-Type")
 		if ctype != "" {
-			if mediatype, mparams, err := mime.ParseMediaType(ctype); err == nil || err == mime.BuggyMediaType {
+			if mediatype, mparams, err := mime.ParseMediaType(ctype); err == nil || mime.IsOkPMTError(err) == nil {
 				/*
 				 *Content-Type: text/plain;\t charset="hz-gb-2312"
 				 */
@@ -203,7 +203,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 		// Parse top-level multipart
 		ctype := mailMsg.Header.Get("Content-Type")
 		mediatype, params, err := mime.ParseMediaType(ctype)
-		if err != nil && err != mime.BuggyMediaType {
+		if err != nil && mime.IsOkPMTError(err) != nil {
 			return nil, fmt.Errorf("Unable to parse media type: %v", err)
 		}
 		if !strings.HasPrefix(mediatype, "multipart/") {

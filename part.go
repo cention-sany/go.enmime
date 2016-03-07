@@ -109,7 +109,7 @@ func ParseMIME(reader *bufio.Reader) (MIMEPart, error) {
 		}
 	}
 	mediatype, params, err := mime.ParseMediaType(header.Get("Content-Type"))
-	if err != nil && err != mime.BuggyMediaType {
+	if err != nil && mime.IsOkPMTError(err) != nil {
 		return nil, err
 	}
 	root := &memMIMEPart{header: header, contentType: mediatype}
@@ -196,7 +196,7 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 			ctype = mrp.Header.Get("Content-Type")
 		}
 		mediatype, mparams, err := mime.ParseMediaType(ctype)
-		if err != nil && err != mime.BuggyMediaType {
+		if err != nil && mime.IsOkPMTError(err) != nil {
 			//log.Println("debug: parse parts media type error")
 			return err
 		}
@@ -213,7 +213,7 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 
 		// Figure out our disposition, filename
 		disposition, dparams, err := mime.ParseMediaType(mrp.Header.Get("Content-Disposition"))
-		if err == nil || err == mime.BuggyMediaType {
+		if err == nil || mime.IsOkPMTError(err) == nil {
 			// Disposition is optional
 			p.disposition = disposition
 			p.fileName = DecodeHeader(dparams["filename"])
