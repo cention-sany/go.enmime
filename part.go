@@ -229,7 +229,7 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 		}
 
 		boundary := mparams["boundary"]
-		if boundary != "" {
+		if boundary != "" && !strings.HasPrefix(mediatype, "text/") {
 			// Content is another multipart
 			err = parseParts(p, mrp, boundary)
 			if err != nil {
