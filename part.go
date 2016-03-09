@@ -237,7 +237,15 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 			}
 		} else {
 			// Content is text or data, decode it
-			data, err := decodeSection(mrp.Header.Get("Content-Transfer-Encoding"), mrp)
+			d := mrp.Header.Get("Content-Transfer-Encoding")
+			if mediatype == "message/rfc822" {
+				switch strings.ToLower(d) {
+				case "7bit", "8bit", "binary":
+				default:
+					d = "" // force no decoding
+				}
+			}
+			data, err := decodeSection(d, mrp)
 			if err != nil {
 				return err
 			}
