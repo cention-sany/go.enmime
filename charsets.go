@@ -2,8 +2,10 @@ package enmime
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"regexp"
 	"strings"
 
 	"github.com/cention-sany/utf7"
@@ -160,6 +162,7 @@ var encodings = map[string]struct {
 	"iso-8859-1":          {charmap.Windows1252, "windows-1252"},
 	"iso-ir-100":          {charmap.Windows1252, "windows-1252"},
 	"iso8859-1":           {charmap.Windows1252, "windows-1252"},
+	"iso8859_1":           {charmap.Windows1252, "windows-1252"},
 	"iso88591":            {charmap.Windows1252, "windows-1252"},
 	"iso_8859-1":          {charmap.Windows1252, "windows-1252"},
 	"iso_8859-1:1987":     {charmap.Windows1252, "windows-1252"},
@@ -247,19 +250,47 @@ var encodings = map[string]struct {
 	"x-user-defined":      {charmap.XUserDefined, "x-user-defined"},
 }
 
-func ConvertToUTF8String(charset, text string) (string, error) {
+var charsetRegexp *regexp.Regexp
+var errParsingCharset = errors.New("Could not find a valid charset in the HTML body")
+
+func ConvertToUTF8String(charset string, textBytes []byte) (string, error) {
 	if strings.ToLower(charset) == "utf-8" {
-		return text, nil
+		return string(textBytes), nil
 	}
 	item, ok := encodings[strings.ToLower(charset)]
 	if !ok {
-		return text, fmt.Errorf("Unsupport charset %s", charset)
+		return string(textBytes), fmt.Errorf("Unsupport charset %s", charset)
 	}
-	input := bytes.NewReader([]byte(text))
+	input := bytes.NewReader(textBytes)
 	reader := transform.NewReader(input, item.e.NewDecoder())
 	output, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return "", err
 	}
 	return string(output), nil
+}
+
+// Look for charset in the html meta tag (v4.01 and v5)
+func charsetFromHTMLString(htmlString string) (string, error) {
+	if charsetRegexp == nil {
+		var err error
+		charsetRegexp, err = regexp.Compile(`(?i)<meta.*charset="?\s*(?P<charset>[a-zA-Z0-9_.:-]+)\s*"`)
+		if err != nil {
+			charsetRegexp = nil
+			return "", err
+		}
+	}
+	charsetMatches := charsetRegexp.FindAllStringSubmatch(htmlString, -1)
+	if len(charsetMatches) > 0 {
+		n1 := charsetRegexp.SubexpNames()
+		r2 := charsetMatches[0]
+
+		md := map[string]string{}
+		for i, n := range r2 {
+			md[n1[i]] = n
+		}
+
+		return md["charset"], nil
+	}
+	return "", errParsingCharset
 }

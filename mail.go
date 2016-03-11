@@ -10,17 +10,19 @@ import (
 	"github.com/cention-sany/mime"
 	"github.com/cention-sany/net/mail"
 	"github.com/cention-sany/net/textproto"
+	"github.com/jaytaylor/html2text"
 )
 
 // MIMEBody is the outer wrapper for MIME messages.
 type MIMEBody struct {
-	Text        string      // The plain text portion of the message
-	Html        string      // The HTML portion of the message
-	Root        MIMEPart    // The top-level MIMEPart
-	Attachments []MIMEPart  // All parts having a Content-Disposition of attachment
-	Inlines     []MIMEPart  // All parts having a Content-Disposition of inline
-	OtherParts  []MIMEPart  // All parts not in Attachments and Inlines
-	header      mail.Header // Header from original message
+	Text           string      // The plain text portion of the message
+	HTML           string      // The HTML portion of the message
+	IsTextFromHTML bool        // Plain text was empty; down-converted HTML
+	Root           MIMEPart    // The top-level MIMEPart
+	Attachments    []MIMEPart  // All parts having a Content-Disposition of attachment
+	Inlines        []MIMEPart  // All parts having a Content-Disposition of inline
+	OtherParts     []MIMEPart  // All parts not in Attachments and Inlines
+	header         mail.Header // Header from original message
 }
 
 var AddressHeaders = []string{"From", "To", "Delivered-To", "Cc", "Bcc", "Reply-To"}
@@ -117,8 +119,9 @@ func binMIME(mailMsg *mail.Message) (*MIMEBody, error) {
 	}
 
 	m := &MIMEBody{
-		header: mailMsg.Header,
-		Root:   NewMIMEPart(nil, mediatype),
+		header:         mailMsg.Header,
+		Root:           NewMIMEPart(nil, mediatype),
+		IsTextFromHTML: false,
 	}
 
 	p := NewMIMEPart(nil, mediatype)
@@ -159,10 +162,12 @@ func binMIME(mailMsg *mail.Message) (*MIMEBody, error) {
 // MIMEPart object.
 func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 	var gerr error
-	mimeMsg := &MIMEBody{header: mailMsg.Header}
+	mimeMsg := &MIMEBody{
+		IsTextFromHTML: false,
+		header:         mailMsg.Header,
+	}
 
 	if !IsMultipartMessage(mailMsg) {
-
 		// Attachment only?
 		if IsBinaryBody(mailMsg) {
 			return binMIME(mailMsg)
@@ -174,6 +179,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Error decoding text-only message: %v", err)
 		}
+		// Handle plain ASCII text, content-type unspecified
 		mimeMsg.Text = string(bodyBytes)
 
 		// Check for HTML at top-level, eat errors quietly
@@ -184,7 +190,8 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 				 *Content-Type: text/plain;\t charset="hz-gb-2312"
 				 */
 				if mparams["charset"] != "" {
-					newStr, err := ConvertToUTF8String(mparams["charset"], mimeMsg.Text)
+					// Convert plain text to UTF8 if content type specified a charset
+					newStr, err := ConvertToUTF8String(mparams["charset"], bodyBytes)
 					if err != nil {
 						if newStr == "" {
 							return nil, err
@@ -192,10 +199,25 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 							gerr = err
 						}
 					}
-					mimeMsg.Text = newStr
+				} else if mediatype == "text/html" { // charset is empty, look in html body for charset
+					charset, err := charsetFromHTMLString(mimeMsg.Text)
+
+					if charset != "" && err == nil {
+						newStr, err := ConvertToUTF8String(charset, bodyBytes)
+						if err != nil && newStr == "" {
+							return nil, err
+						} else {
+							if err != nil {
+								gerr = err
+							}
+							mimeMsg.Text = newStr
+						}
+					}
 				}
 				if mediatype == "text/html" {
-					mimeMsg.Html = mimeMsg.Text
+					mimeMsg.HTML = mimeMsg.Text
+					// Empty Text will trigger html2text conversion below
+					mimeMsg.Text = ""
 				}
 			}
 		}
@@ -229,7 +251,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 			})
 			if match != nil {
 				if match.Charset() != "" {
-					newStr, err := ConvertToUTF8String(match.Charset(), string(match.Content()))
+					newStr, err := ConvertToUTF8String(match.Charset(), match.Content())
 					if err != nil {
 						if newStr == "" {
 							return nil, err
@@ -252,7 +274,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 					mimeMsg.Text += "\n--\n"
 				}
 				if m.Charset() != "" {
-					newStr, err := ConvertToUTF8String(m.Charset(), string(m.Content()))
+					newStr, err := ConvertToUTF8String(m.Charset(), m.Content())
 					if err != nil {
 						if newStr == "" {
 							return nil, err
@@ -273,7 +295,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 		})
 		if match != nil {
 			if match.Charset() != "" {
-				newStr, err := ConvertToUTF8String(match.Charset(), string(match.Content()))
+				newStr, err := ConvertToUTF8String(match.Charset(), match.Content())
 				if err != nil {
 					if newStr == "" {
 						return nil, err
@@ -281,9 +303,9 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 						gerr = err
 					}
 				}
-				mimeMsg.Html += newStr
+				mimeMsg.HTML += newStr
 			} else {
-				mimeMsg.Html = string(match.Content())
+				mimeMsg.HTML = string(match.Content())
 			}
 
 		}
@@ -316,6 +338,16 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 		})
 	}
 
+	// Down-convert HTML to text if necessary
+	if mimeMsg.Text == "" && mimeMsg.HTML != "" {
+		mimeMsg.IsTextFromHTML = true
+		var err error
+		if mimeMsg.Text, err = html2text.FromString(mimeMsg.HTML); err != nil {
+			// Fail gently
+			mimeMsg.Text = ""
+			return mimeMsg, err
+		}
+	}
 	return mimeMsg, gerr
 }
 
