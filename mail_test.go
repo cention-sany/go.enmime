@@ -344,6 +344,45 @@ func TestDetectCharacterSetInHTML(t *testing.T) {
 		"HTML body should have contained a Unicode Euro Symbol")
 }
 
+const otherShouldHasCorrectFilename = "Other part should have correct filename"
+const otherShouldHasCorrectContent = "Other part should have correct content"
+
+func TestAllBadMIME(t *testing.T) {
+	msg := readMessage("all-bad-mime.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil && mime == nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+
+	assert.False(t, mime.IsTextFromHTML, "Expected text-from-HTML flag to be false")
+	assert.Equal(t, "This is plain text", mime.Text, "Plain text is not match")
+	assert.Equal(t, "<strong>This is html text<strong>", mime.HTML, "Html text is not match")
+	assert.Equal(t, 0, len(mime.Inlines), "Should have no inlines")
+	assert.Equal(t, 0, len(mime.Attachments), "Should have no attachment")
+
+	assert.Equal(t, 5, len(mime.OtherParts), "Should have one OtherParts")
+	// first bad mime
+	assert.Equal(t, "nomime.typ", mime.OtherParts[0].FileName(), otherShouldHasCorrectFilename)
+	assert.Contains(t, string(mime.OtherParts[0].Content()), "content1",
+		otherShouldHasCorrectContent)
+	// second bad mime
+	assert.Equal(t, "nomime2.typ", mime.OtherParts[1].FileName(), otherShouldHasCorrectFilename)
+	assert.Contains(t, string(mime.OtherParts[1].Content()), "content2",
+		otherShouldHasCorrectContent)
+	// third bad mime
+	assert.Equal(t, "slash.png", mime.OtherParts[2].FileName(), otherShouldHasCorrectFilename)
+	assert.Contains(t, string(mime.OtherParts[2].Content()), "content3",
+		otherShouldHasCorrectContent)
+	// fourth bad mime
+	assert.Equal(t, "noslash.pdf", mime.OtherParts[3].FileName(), otherShouldHasCorrectFilename)
+	assert.Contains(t, string(mime.OtherParts[3].Content()), "content4",
+		otherShouldHasCorrectContent)
+	// fifth bad mime
+	assert.Equal(t, "", mime.OtherParts[4].FileName(), "Other part should have no filename")
+	assert.Contains(t, string(mime.OtherParts[4].Content()), "content5",
+		otherShouldHasCorrectContent)
+}
+
 // readMessage is a test utility function to fetch a mail.Message object.
 func readMessage(filename string) *mail.Message {
 	// Open test email for parsing

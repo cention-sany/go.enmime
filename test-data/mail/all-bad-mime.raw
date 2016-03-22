@@ -1,0 +1,49 @@
+From: Sany Liew <sany.liew@gmail.com>
+Subject: Sany Liew At Cention
+Date: Thu, 18 Oct 2012 22:48:39 -0700
+To: test.sany@cention.se
+Mime-Version: 1.0 
+Content-Type: multipart/mixed; boundary="Enmime-Test-100"
+
+--Enmime-Test-100
+Content-Type: multipart/alternative; boundary="Enmime-Test-101"
+Content-Transfer-Encoding: 7bit
+
+--Enmime-Test-101
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+
+This is plain text
+--Enmime-Test-101
+Content-Transfer-Encoding: 7bit
+Content-Type: text/html; charset=us-ascii
+
+<strong>This is html text<strong>
+--Enmime-Test-101--
+--Enmime-Test-100
+Content-Type: ; name="nomime.typ"
+Content-Transfer-Encoding: 7bit
+
+content1
+--Enmime-Test-100
+Content-Type: ""; name="nomime2.typ"
+Content-Transfer-Encoding: 7bit
+
+content2
+--Enmime-Test-100
+Content-Type: IMAGE/; name="slash.png"
+Content-Transfer-Encoding: 7bit
+
+content3
+--Enmime-Test-100
+Content-Type: PDF; name="noslash.pdf"
+Content-Transfer-Encoding: 7bit
+
+content4
+--Enmime-Test-100
+Content-Type:;
+Content-Transfer-Encoding: 7bit
+
+content5
+--Enmime-Test-100--
+
