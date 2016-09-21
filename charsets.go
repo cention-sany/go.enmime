@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/cention-sany/iconv"
 	"github.com/cention-sany/utf7"
 	"golang.org/x/text/encoding"
 	"golang.org/x/text/encoding/charmap"
@@ -265,7 +266,21 @@ func ConvertToUTF8String(charset string, textBytes []byte) (string, error) {
 	reader := transform.NewReader(input, item.e.NewDecoder())
 	output, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return "", err
+		cd, err2 := iconv.Open("UTF8", charset)
+		if err2 != nil {
+			return "", fmt.Errorf("err1:%v err2:%v", err, err2)
+		}
+		var b []byte
+		func() {
+			var outbuf [512]byte
+			defer cd.Close()
+
+			b, _, err2 = cd.Conv(textBytes, outbuf[:])
+			if err2 != nil {
+				return
+			}
+		}()
+		return string(b), err2
 	}
 	return string(output), nil
 }
