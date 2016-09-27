@@ -2,8 +2,10 @@ language: go
 
 go:
   - 1.4.2
+  - 1.7.1
   - tip
 
 install:
   - go get -v ./...
   - go get github.com/stretchr/testify
+  - cd $GOPATH/src/github.com/jaytaylor/html2text; git checkout 4936b6c2ae7f89f5eeba2473c31fd27ea8f11068
