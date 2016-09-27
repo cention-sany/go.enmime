@@ -36,6 +36,18 @@ func TestParseNonMime(t *testing.T) {
 	assert.Empty(t, mime.HTML, "Expected no HTML body")
 }
 
+func TestParseRussianNonMime(t *testing.T) {
+	msg := readMessage("russian-non-mime.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse non-MIME: %v", err)
+	}
+
+	assert.False(t, mime.IsTextFromHTML, "Expected text-from-HTML flag to be false")
+	assert.Contains(t, mime.Text, "Ирина  ,")
+	assert.Empty(t, mime.HTML, "Expected no HTML body")
+}
+
 func TestParseNonMimeHTML(t *testing.T) {
 	msg := readMessage("non-mime-html.raw")
 	mime, err := ParseMIMEBody(msg)
@@ -149,6 +161,29 @@ func TestParseAttachment(t *testing.T) {
 
 func TestParseAttachmentOctet(t *testing.T) {
 	msg := readMessage("attachment-octet.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+
+	assert.Contains(t, mime.Text, "A text section")
+	assert.Equal(t, "", mime.HTML, "Html attachment is not for display")
+	assert.Equal(t, 0, len(mime.Inlines), "Should have no inlines")
+	assert.Equal(t, 1, len(mime.Attachments), "Should have a single attachment")
+	assert.Equal(t, "ATTACHMENT.EXE", mime.Attachments[0].FileName(),
+		"Attachment should have correct filename")
+	assert.Equal(t,
+		[]byte{
+			0x3, 0x17, 0xe1, 0x7e, 0xe8, 0xeb, 0xa2, 0x96, 0x9d, 0x95, 0xa7, 0x67, 0x82, 0x9,
+			0xdf, 0x8e, 0xc, 0x2c, 0x6a, 0x2b, 0x9b, 0xbe, 0x79, 0xa4, 0x69, 0xd8, 0xae, 0x86,
+			0xd7, 0xab, 0xa8, 0x72, 0x52, 0x15, 0xfb, 0x80, 0x8e, 0x47, 0xe1, 0xae, 0xaa, 0x5e,
+			0xa2, 0xb2, 0xc0, 0x90, 0x59, 0xe3, 0x35, 0xf8, 0x60, 0xb7, 0xb1, 0x63, 0x77, 0xd7,
+			0x5f, 0x92, 0x58, 0xa8, 0x75,
+		}, mime.Attachments[0].Content(), "Attachment should have correct content")
+}
+
+func TestParseBase64Dot(t *testing.T) {
+	msg := readMessage("base64dot.raw")
 	mime, err := ParseMIMEBody(msg)
 	if err != nil {
 		t.Fatalf("Failed to parse MIME: %v", err)

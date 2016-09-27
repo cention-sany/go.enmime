@@ -198,6 +198,8 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 						} else {
 							gerr = err
 						}
+					} else if newStr != "" {
+						mimeMsg.Text = newStr
 					}
 				} else if mediatype == "text/html" { // charset is empty, look in html body for charset
 					charset, err := charsetFromHTMLString(mimeMsg.Text)
