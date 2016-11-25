@@ -192,13 +192,12 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 				if mparams["charset"] != "" {
 					// Convert plain text to UTF8 if content type specified a charset
 					newStr, err := ConvertToUTF8String(mparams["charset"], bodyBytes)
-					if err != nil {
-						if newStr == "" {
-							return nil, err
-						} else {
+					if err != nil && newStr == "" {
+						return nil, err
+					} else {
+						if err != nil {
 							gerr = err
 						}
-					} else if newStr != "" {
 						mimeMsg.Text = newStr
 					}
 				} else if mediatype == "text/html" { // charset is empty, look in html body for charset
