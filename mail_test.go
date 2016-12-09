@@ -159,6 +159,24 @@ func TestParseAttachment(t *testing.T) {
 	//}
 }
 
+func TestParseUUAttachment(t *testing.T) {
+	msg := readMessage("uu-attachment.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+	assert.False(t, mime.IsTextFromHTML, "Expected text-from-HTML flag to be false")
+	assert.Contains(t, mime.Text, "A text section")
+	assert.Equal(t, "", mime.HTML, "Html attachment is not for display")
+	assert.Equal(t, 0, len(mime.Inlines), "Should have no inlines")
+	assert.Equal(t, 1, len(mime.Attachments), "Should have a single attachment")
+	assert.Equal(t, "uutestname.txt", mime.Attachments[0].FileName(),
+		"Attachment should has correct filename")
+	assert.Contains(t, string(mime.Attachments[0].Content()),
+		"I love you forever",
+		"Uuencoded attachment should has correct content")
+}
+
 func TestParseAttachmentOctet(t *testing.T) {
 	msg := readMessage("attachment-octet.raw")
 	mime, err := ParseMIMEBody(msg)

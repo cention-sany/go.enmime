@@ -13,6 +13,8 @@ import (
 	"github.com/cention-sany/mime/multipart"
 	"github.com/cention-sany/mime/quotedprintable"
 	"github.com/cention-sany/net/textproto"
+	"github.com/cention-sany/uuencode"
+	"golang.org/x/text/transform"
 )
 
 // MIMEPart is the primary interface enmine clients will use.  Each MIMEPart represents
@@ -270,6 +272,8 @@ func decodeSection(encoding string, reader io.Reader) ([]byte, error) {
 		// cleaner := NewBase64Cleaner(reader)
 		// decoder = base64.NewDecoder(base64.StdEncoding, cleaner)
 		decoder = NewBase64Combiner(reader)
+	case "uuencode":
+		decoder = transform.NewReader(reader, uuencode.NewDecFirstOne())
 	}
 
 	// Read bytes into buffer

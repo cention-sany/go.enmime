@@ -1,0 +1,24 @@
+From: Test Liew <test@liew.skynet>
+Subject: UU Attachment
+Date: Thu, 18 Oct 2012 22:48:39 -0700
+Message-Id: <07B7061D-2676-487E-942E-C341CE4D13DC@liew.skynet>
+To: greg@inbucket.com
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="Enmime-Test-108"
+
+--Enmime-Test-108
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=us-ascii
+
+A text section
+--Enmime-Test-108
+Content-Transfer-Encoding: uuencode
+Content-Type: text/plain; name="uutestfake.txt"
+Content-Disposition: attachment; filename=uutestname.txt
+
+begin 664 notthisname.txt
+322!L;W9E('EO=2!F;W)E=F5R+@``
+`
+end
+
+--Enmime-Test-108--
