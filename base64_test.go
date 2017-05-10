@@ -3,6 +3,7 @@ package enmime
 import (
 	"bytes"
 	"encoding/base64"
+	"io"
 	"math/rand"
 	"reflect"
 	"strings"
@@ -82,5 +83,63 @@ func TestBase64PadCombinerRandom(t *testing.T) {
 	}
 	if err := quick.Check(f, &c); err != nil {
 		t.Error("failed on combiner black box test", err)
+	}
+}
+
+// Test uneven base64 pad ending.
+var strModulusThreeLeaveOne = []string{
+	"1234567890123456",
+	"a",
+	"abcd",
+	"xyz1234",
+	"mnopqrstuv",
+}
+
+func TestUnevenPadBase64(t *testing.T) {
+	for i, s := range strModulusThreeLeaveOne {
+		ss := base64.StdEncoding.EncodeToString([]byte(s))
+		ss = ss[:len(ss)-1] // purposely corrupt the base64 by removing one pad
+		br := bytes.NewReader([]byte(ss))
+		c := NewBase64Combiner(br)
+		buf := new(bytes.Buffer)
+		_, err := buf.ReadFrom(c)
+		if err != nil && err != io.EOF {
+			t.Fatal("#", i, "Expect no error in read all but got:", err)
+		}
+		result := reflect.DeepEqual(s, buf.String())
+		if !result {
+			t.Error("Error #", i)
+			t.Error("\nExpect->", s)
+			t.Error("\nGot->", buf.String())
+		}
+	}
+	// split and combine
+	for i, s := range strModulusThreeLeaveOne {
+		// current
+		ss := base64.StdEncoding.EncodeToString([]byte(s))
+		ss = ss[:len(ss)-1] // purposely corrupt the base64 by removing one pad
+		// combine next
+		var next string
+		if i == len(strModulusThreeLeaveOne)-1 {
+			next = strModulusThreeLeaveOne[0]
+		} else {
+			next = strModulusThreeLeaveOne[i]
+		}
+		sss := base64.StdEncoding.EncodeToString([]byte(next))
+		// create base64 that was splitted
+		ss = ss + "\r\n\t\r\n" + sss[:len(sss)-1]
+		br := bytes.NewReader([]byte(ss))
+		c := NewBase64Combiner(br)
+		buf := new(bytes.Buffer)
+		_, err := buf.ReadFrom(c)
+		if err != nil && err != io.EOF {
+			t.Fatal("#", i, "Expect no error in read all but got:", err)
+		}
+		result := reflect.DeepEqual(s+next, buf.String())
+		if !result {
+			t.Error("Error #", i)
+			t.Error("\nExpect->", s)
+			t.Error("\nGot->", buf.String())
+		}
 	}
 }

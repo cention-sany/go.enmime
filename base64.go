@@ -2,6 +2,7 @@ package enmime
 
 import (
 	"encoding/base64"
+	"errors"
 	"io"
 
 	//third parties
@@ -46,14 +47,17 @@ func (qp *Base64Cleaner) Read(p []byte) (n int, err error) {
 	return n, err
 }
 
+var padEnd = errors.New("pad ending")
+
 const paddingBufferSize = 1024
 
 // Base64PadReader helps read io.Reader and stop at the last padding byte
 type base64PadReader struct {
-	foundEqual, eof bool
-	err             error
-	in              io.Reader
-	rb              *rbuf.FixedSizeRingBuf
+	foundEqual, eof, padCorrect bool
+	err                         error
+	in                          io.Reader
+	rb                          *rbuf.FixedSizeRingBuf
+	quanta                      int
 }
 
 // BASE64 rfc2045 specified that:
@@ -61,10 +65,11 @@ type base64PadReader struct {
 // decoding software. Other white space probably indicate a transmission error,
 // about which a warning message or even a message rejection might be
 // appropriate under some circumstances.
-func newBase64PadReader(r io.Reader) *base64PadReader {
+func newBase64PadReader(r io.Reader, padCorrect bool) *base64PadReader {
 	return &base64PadReader{
-		in: r,
-		rb: rbuf.NewFixedSizeRingBuf(paddingBufferSize),
+		in:         r,
+		rb:         rbuf.NewFixedSizeRingBuf(paddingBufferSize),
+		padCorrect: padCorrect,
 	}
 }
 
@@ -105,7 +110,12 @@ func (b *base64PadReader) Read(p []byte) (n int, err error) {
 	}
 	size = b.rb.Readable
 	if size == 0 {
-		return 0, io.EOF
+		if b.padCorrect && b.quanta == 3 {
+			b.quanta = 0
+			p[n] = '='
+			n++
+		}
+		return n, io.EOF
 	}
 	if len(p) < size {
 		size = len(p)
@@ -123,14 +133,25 @@ func (b *base64PadReader) Read(p []byte) (n int, err error) {
 			b.foundEqual = true
 		} else if b.foundEqual {
 			b.foundEqual = false
-			err = io.EOF
+			err = padEnd
 			b.err = err
 			break
 		}
 		p[n] = pbuf[i]
 		n++
+		if b.padCorrect {
+			b.quanta++
+			if b.quanta >= 4 {
+				b.quanta = 0
+			}
+		}
 	}
 	b.rb.Advance(n)
+	if b.padCorrect && b.err == padEnd && b.quanta == 3 {
+		b.quanta = 0
+		p[n] = '='
+		n++
+	}
 	return n, b.err
 }
 
@@ -151,7 +172,6 @@ func (b *base64PadReader) nextPadding() bool {
 // base64-ed data has padding inside it.
 type Base64Combiner struct {
 	pad     *base64PadReader
-	cleaner *Base64Cleaner
 	decoder io.Reader
 	buf     [1024]byte
 }
@@ -160,12 +180,11 @@ type Base64Combiner struct {
 // original data from it no matter how the base64-ed source splited
 // by line break or carriage return.
 func NewBase64Combiner(r io.Reader) *Base64Combiner {
-	padReader := newBase64PadReader(r)
-	c := NewBase64Cleaner(padReader)
+	cr := NewBase64Cleaner(r)
+	padReader := newBase64PadReader(cr, true)
 	return &Base64Combiner{
 		pad:     padReader,
-		cleaner: c,
-		decoder: base64.NewDecoder(base64.StdEncoding, c),
+		decoder: base64.NewDecoder(base64.StdEncoding, padReader),
 	}
 }
 
@@ -179,11 +198,10 @@ func (b *Base64Combiner) Read(p []byte) (int, error) {
 	buf := b.buf[:size]
 	bn, err := b.decoder.Read(buf)
 	copy(p, buf[:bn])
-	if err == io.EOF {
-		if b.pad.nextPadding() {
-			b.decoder = base64.NewDecoder(base64.StdEncoding, b.cleaner)
-			err = nil
-		}
+	if err == padEnd && b.pad.nextPadding() {
+		// reset internal state of base64 pkg
+		b.decoder = base64.NewDecoder(base64.StdEncoding, b.pad)
+		err = nil
 	}
 	return bn, err
 }
