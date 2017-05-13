@@ -2,8 +2,9 @@ package enmime
 
 import (
 	"fmt"
-	"mime"
 	"strings"
+
+	"github.com/cention-sany/mime"
 )
 
 func debug(format string, args ...interface{}) {
