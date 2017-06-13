@@ -3,6 +3,7 @@ package enmime
 import (
 	"encoding/base64"
 	"io"
+	"strings"
 
 	//third parties
 	"github.com/glycerine/rbuf"
@@ -154,19 +155,29 @@ type Base64Combiner struct {
 	cleaner *Base64Cleaner
 	decoder io.Reader
 	buf     [1024]byte
+	soft    bool
 }
 
 // NewBase64Combiner get data from base64-ed source and produce the
 // original data from it no matter how the base64-ed source splited
 // by line break or carriage return.
 func NewBase64Combiner(r io.Reader) *Base64Combiner {
+	return newB64Combiner(r, false)
+}
+
+func newB64Combiner(r io.Reader, soft bool) *Base64Combiner {
 	padReader := newBase64PadReader(r)
 	c := NewBase64Cleaner(padReader)
 	return &Base64Combiner{
 		pad:     padReader,
 		cleaner: c,
 		decoder: base64.NewDecoder(base64.StdEncoding, c),
+		soft:    soft,
 	}
+}
+
+func NewB64SoftCombiner(r io.Reader) *Base64Combiner {
+	return newB64Combiner(r, true)
 }
 
 // Read method for io.Reader interface.
@@ -184,6 +195,10 @@ func (b *Base64Combiner) Read(p []byte) (int, error) {
 			b.decoder = base64.NewDecoder(base64.StdEncoding, b.cleaner)
 			err = nil
 		}
+	} else if b.soft && err != nil && strings.Contains(err.Error(), "unexpected EOF") {
+		// do not treat wrong ending base64 as error and just take whatever it
+		// decoded.
+		err = io.EOF
 	}
 	return bn, err
 }

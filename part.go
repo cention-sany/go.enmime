@@ -271,7 +271,7 @@ func decodeSection(encoding string, reader io.Reader) ([]byte, error) {
 	case "base64":
 		// cleaner := NewBase64Cleaner(reader)
 		// decoder = base64.NewDecoder(base64.StdEncoding, cleaner)
-		decoder = NewBase64Combiner(reader)
+		decoder = NewB64SoftCombiner(reader)
 	case "uuencode":
 		decoder = transform.NewReader(reader, uuencode.NewDecFirstOne())
 	}
