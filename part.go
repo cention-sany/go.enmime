@@ -124,7 +124,7 @@ func ParseMIME(reader *bufio.Reader) (MIMEPart, error) {
 		}
 	} else {
 		// Content is text or data, decode it
-		content, err := decodeSection(header.Get("Content-Transfer-Encoding"), reader)
+		content, err := decodeSection(header.Get("Content-Transfer-Encoding"), params["charset"], reader)
 		if err != nil {
 			return nil, err
 		}
@@ -231,7 +231,8 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 		}
 
 		boundary := mparams["boundary"]
-		if boundary != "" && !strings.HasPrefix(mediatype, "text/") {
+		isText := strings.HasPrefix(mediatype, "text/")
+		if boundary != "" && !isText {
 			// Content is another multipart
 			err = parseParts(p, mrp, boundary)
 			if err != nil {
@@ -247,7 +248,11 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 					d = "" // force no decoding
 				}
 			}
-			data, err := decodeSection(d, mrp)
+			var txtCharset string
+			if isText {
+				txtCharset = p.charset
+			}
+			data, err := decodeSection(d, txtCharset, mrp)
 			if err != nil {
 				return err
 			}
@@ -261,13 +266,17 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 // decodeSection attempts to decode the data from reader using the algorithm listed in
 // the Content-Transfer-Encoding header, returning the raw data if it does not known
 // the encoding type.
-func decodeSection(encoding string, reader io.Reader) ([]byte, error) {
+func decodeSection(encoding, txtCharset string, reader io.Reader) ([]byte, error) {
 	// Default is to just read input into bytes
 	decoder := reader
-
 	switch strings.ToLower(encoding) {
 	case "quoted-printable":
-		decoder = quotedprintable.NewReader(reader)
+		txtCharset = strings.ToLower(txtCharset)
+		if txtCharset == "utf8" || txtCharset == "utf-8" {
+			decoder = quotedprintable.NewUTF8Reader(reader)
+		} else {
+			decoder = quotedprintable.NewReader(reader)
+		}
 	case "base64":
 		// cleaner := NewBase64Cleaner(reader)
 		// decoder = base64.NewDecoder(base64.StdEncoding, cleaner)

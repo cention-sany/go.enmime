@@ -2,7 +2,9 @@ package enmime
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"sync"
 	//"net/textproto"
 	//"net/mail"
 	"strings"
@@ -126,7 +128,7 @@ func binMIME(mailMsg *mail.Message) (*MIMEBody, error) {
 	}
 
 	p := NewMIMEPart(nil, mediatype)
-	p.content, err = decodeSection(mailMsg.Header.Get("Content-Transfer-Encoding"), mailMsg.Body)
+	p.content, err = decodeSection(mailMsg.Header.Get("Content-Transfer-Encoding"), "", mailMsg.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +159,17 @@ func binMIME(mailMsg *mail.Message) (*MIMEBody, error) {
 	return m, err
 }
 
+func parseTextOnly(mm *MIMEBody, cte, txtCharset string, r io.Reader) ([]byte, error) {
+	// Parse as text only
+	bs, err := decodeSection(cte, txtCharset, r)
+	if err != nil {
+		return nil, fmt.Errorf("Error decoding text-only message: %v", err)
+	}
+	// Handle plain ASCII text, content-type unspecified
+	mm.Text = string(bs)
+	return bs, nil
+}
+
 // ParseMIMEBody parses the body of the message object into a  tree of MIMEPart
 // objects, each of which is aware of its content type, filename and headers.
 // If the part was encoded in quoted-printable or base64, it is decoded before
@@ -173,16 +186,17 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 		if IsBinaryBody(mailMsg) {
 			return binMIME(mailMsg)
 		}
-
-		// Parse as text only
-		bodyBytes, err := decodeSection(mailMsg.Header.Get("Content-Transfer-Encoding"),
-			mailMsg.Body)
-		if err != nil {
-			return nil, fmt.Errorf("Error decoding text-only message: %v", err)
+		var once sync.Once
+		f := func(charset string) ([]byte, error) {
+			var (
+				err error
+				bs  []byte
+			)
+			once.Do(func() {
+				bs, err = parseTextOnly(mimeMsg, mailMsg.Header.Get("Content-Transfer-Encoding"), charset, mailMsg.Body)
+			})
+			return bs, err
 		}
-		// Handle plain ASCII text, content-type unspecified
-		mimeMsg.Text = string(bodyBytes)
-
 		// Check for HTML at top-level, eat errors quietly
 		ctype := mailMsg.Header.Get("Content-Type")
 		if ctype != "" {
@@ -190,7 +204,12 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 				/*
 				 *Content-Type: text/plain;\t charset="hz-gb-2312"
 				 */
-				if mparams["charset"] != "" {
+				charset := mparams["charset"]
+				bodyBytes, err := f(charset)
+				if err != nil {
+					return nil, err
+				}
+				if charset != "" {
 					// Convert plain text to UTF8 if content type specified a charset
 					newStr, err := ConvertToUTF8String(mparams["charset"], bodyBytes)
 					if err != nil && newStr == "" {
@@ -222,6 +241,9 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 					mimeMsg.Text = ""
 				}
 			}
+		}
+		if _, err := f(""); err != nil {
+			return nil, err
 		}
 	} else {
 		// Parse top-level multipart
