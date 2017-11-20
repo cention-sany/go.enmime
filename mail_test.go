@@ -127,6 +127,28 @@ func TestParseQuotedPrintableMime(t *testing.T) {
 	assert.Contains(t, mime.Text, "Nullam venenatis ante")
 }
 
+func TestParseNoEndLineMime(t *testing.T) {
+	msg := readMessage("no-end-line-mime.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+	assert.False(t, mime.IsTextFromHTML, "Expected text-from-HTML flag to be false")
+	assert.Equal(t, "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam venenatis.", mime.Text, "Plain text is not match")
+	assert.Equal(t, "<html><head></body></html>", mime.HTML, "HTML is not match")
+}
+
+func TestParseBrokenQuotedprintableUTF8(t *testing.T) {
+	msg := readMessage("broken-qp-utf8.raw")
+	mime, err := ParseMIMEBody(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+	assert.False(t, mime.IsTextFromHTML, "Expected text-from-HTML flag to be false")
+	assert.Equal(t, "<o:p></o:p></p>f\xC3\x83\xC2\xB6r order", mime.Text, "Plain text is not match")
+	assert.Equal(t, "<html><head>Laggon \xC3\x83 \xC2\xA4r fel</body></html>", mime.HTML, "HTML is not match")
+}
+
 func TestParseInlineHTML(t *testing.T) {
 	msg := readMessage("html-mime-inline.raw")
 	mime, err := ParseMIMEBody(msg)

@@ -1,0 +1,98 @@
+X-DN-ReceivedFileId: 15e7c82f5c8_J9FP_543d-0.eml
+X-DN-Spam-Bayesan-Probability: 0
+Delivered-To: bokus-b2c@onlineks.se
+Return-Path: <SRS0=m0j2=A2=theog.se=crippe@mep.pandasecurity.com>
+Received: from 92.54.27.169 ([92.54.27.169])
+          by spock.onlinesverige.se (DeskNow) with SMTP ID 869
+          for <bokus-b2c@onlineks.se>;
+          Mon, 25 Sep 2017 20:36:25 +0200 (CEST)
+Received: from [84.19.146.215] (helo=mailout01.akb.iexchange.se)
+	by girona.mep.pandasecurity.com with esmtps (TLS1.2:RSA_AES_256_CBC_SHA1:256)
+	(Exim 4.80)
+	(envelope-from <crippe@theog.se>)
+	id 1dwYEQ-0007TN-Os
+	for bokus-b2c@onlineks.se; Mon, 25 Sep 2017 20:35:51 +0200
+Received: from akbexchcas01.akb.local (10.132.1.121) by akbexchmbx01.akb.local
+ (10.132.1.125) with Microsoft SMTP Server (TLS) id 15.0.1178.4; Mon, 25 Sep
+ 2017 20:36:19 +0200
+Received: from iclean.se (10.1.9.214) by akbexchcas01.akb.local (10.132.1.121)
+ with Microsoft SMTP Server (TLS) id 15.0.1178.4 via Frontend Transport; Mon,
+ 25 Sep 2017 20:36:18 +0200
+Received: from smtp.outgoing.loopia.se ([194.9.95.112])
+	by iclean.se stage1 with esmtps 
+	(Exim MailCleaner) 
+	id 1dwYEq-0002wJ-He 
+	for <kundservice@test.com> 
+	from <crippe@theog.se>; Mon, 25 Sep 2017 20:36:16 +0200
+Received: from s554.loopia.se (localhost [127.0.0.1])
+	by s554.loopia.se (Postfix) with ESMTP id 0A0E51CE14ED
+	for <kundservice@test.com>; Mon, 25 Sep 2017 20:36:16 +0200 (CEST)
+Received: from s500.loopia.se (unknown [172.21.200.98])
+	by s554.loopia.se (Postfix) with ESMTP id DFC1C9492A8
+	for <kundservice@test.com>; Mon, 25 Sep 2017 20:36:15 +0200 (CEST)
+Received: from s406.loopia.se (unknown [172.21.200.105])
+	by s500.loopia.se (Postfix) with ESMTP id DA823A7C71B
+	for <kundservice@test.com>; Mon, 25 Sep 2017 20:36:15 +0200 (CEST)
+X-Envelope-From: crippe@theog.se
+X-MailCleaner-SPF: none
+X-Virus-Scanned: amavisd-new at amavis.loopia.se
+X-Spam-Flag: NO
+X-Spam-Score: -0.998
+X-Spam-Level:
+X-Spam-Status: No, score=-0.998 tagged_above=-999 required=6.2
+	tests=[ALL_TRUSTED=-1, HTML_MESSAGE=0.001, MIME_QP_LONG_LINE=0.001]
+	autolearn=disabled
+Received: from s499.loopia.se ([172.21.200.105])
+	by s406.loopia.se (s406.loopia.se [172.21.200.136]) (amavisd-new, port 10024)
+	with LMTP id ej0CXwJ4ru8j for <kundservice@test.com>;
+	Mon, 25 Sep 2017 20:36:15 +0200 (CEST)
+X-Loopia-Auth: user
+X-Loopia-User: crippe@theog.se
+X-Loopia-Originating-IP: 80.216.176.155
+Received: from [192.168.0.17] (c80-216-176-155.bredband.comhem.se [80.216.176.155])
+	(Authenticated sender: crippe@theog.se)
+	by s499.loopia.se (Postfix) with ESMTPSA id 2FE66134A006
+	for <kundservice@test.com>; Mon, 25 Sep 2017 20:36:15 +0200 (CEST)
+From: Crippe Tester <crippe@test.se>
+Content-Type: multipart/alternative;
+	boundary="Apple-Mail-64B3AF6E-558C-4B65-9089-45C5A9EFDDF4"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0 (1.0)
+Date: Mon, 25 Sep 2017 20:36:14 +0200
+Subject: =?utf-8?Q?Re:_=C3=96ppna_bok?=
+Message-ID: <E35E92C5-A412-4506-9BEC-4B86AE76FB36@tester.se>
+References: <1560807-1937334-1506347517-CentionContactCentre@cention.se>
+In-Reply-To: <1560807-1937334-1506347517-CentionContactCentre@cention.se>
+To: Bokus Kundservice <kundservice@test.com>
+X-Mailer: iPhone Mail (14G60)
+X-Newsl: is not newsletter (-3.0/5.0)
+X-Commtouch-ctIPd-RefID: tid=0001.0A0C0301.59C94ACA.02A9
+X-Commtouch-ctasd-RefID: str=0001.0A0C0203.59C94CA1.0079,ss=1,re=0.000,recu=0.000,reip=0.000,cl=1,cld=1,fgs=0
+X-Commtouch: is not spam (Spam: Unknown, VOD: Medium)
+X-NiceBayes: is not spam (8.9%)
+X-Spamc: is not spam (score=0.0, required=5.0)
+X-MailCleaner-Information: Please contact support@candidator.se for more information
+X-MailCleaner-ID: 1dwYEq-0002wP-Ix
+X-MailCleaner: Found to be clean
+X-MailCleaner-SpamCheck: not spam, Newsl (score=-3.0, required=5.0,
+	MC_NEWS_HSBJANSWERS=-3), Spamc (score=0.0, required=5.0,
+	MIME_QP_LONG_LINE 0.0, RCVD_IN_MSPIKE_H2 -0.0, HTML_MESSAGE 0.0)
+X-MailCleaner-ReportURL: https://www.iclean.se/rs.php
+Received-SPF: None (akbexchmbx01.akb.local: crippe@theog.se does not designate
+ permitted sender hosts)
+X-CTCH-IPCLASS: T2
+X-SPF-Received: 5
+X-Spamina-History: valid
+X-Spamina-Service-Type: pyme
+
+--Apple-Mail-64B3AF6E-558C-4B65-9089-45C5A9EFDDF4
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam venenatis.
+--Apple-Mail-64B3AF6E-558C-4B65-9089-45C5A9EFDDF4
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<html><head></body></html>
+--Apple-Mail-64B3AF6E-558C-4B65-9089-45C5A9EFDDF4--
