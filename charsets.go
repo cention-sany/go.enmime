@@ -33,6 +33,7 @@ var encodings = map[string]struct {
 	"unicode-1-1-utf-7":   {utf7.UTF7, "utf-7"},
 	"cp-850":              {charmap.CodePage850, "ibm850"},
 	"cp850":               {charmap.CodePage850, "ibm850"},
+	"ibm850":              {charmap.CodePage850, "ibm850"},
 	"866":                 {charmap.CodePage866, "ibm866"},
 	"cp866":               {charmap.CodePage866, "ibm866"},
 	"csibm866":            {charmap.CodePage866, "ibm866"},
