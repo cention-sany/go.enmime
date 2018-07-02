@@ -128,7 +128,7 @@ func binMIME(mailMsg *mail.Message) (*MIMEBody, error) {
 	}
 
 	p := NewMIMEPart(nil, mediatype)
-	p.content, err = decodeSection(mailMsg.Header.Get("Content-Transfer-Encoding"), "", mailMsg.Body)
+	p.content, err = decodeSection(mailMsg.Header.Get("Content-Transfer-Encoding"), "", false, mailMsg.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -159,9 +159,9 @@ func binMIME(mailMsg *mail.Message) (*MIMEBody, error) {
 	return m, err
 }
 
-func parseTextOnly(mm *MIMEBody, cte, txtCharset string, r io.Reader) ([]byte, error) {
+func parseTextOnly(mm *MIMEBody, cte, txtCharset string, correctUTF8QP bool, r io.Reader) ([]byte, error) {
 	// Parse as text only
-	bs, err := decodeSection(cte, txtCharset, r)
+	bs, err := decodeSection(cte, txtCharset, correctUTF8QP, r)
 	if err != nil {
 		return nil, fmt.Errorf("Error decoding text-only message: %v", err)
 	}
@@ -175,6 +175,17 @@ func parseTextOnly(mm *MIMEBody, cte, txtCharset string, r io.Reader) ([]byte, e
 // If the part was encoded in quoted-printable or base64, it is decoded before
 // being stored in the MIMEPart object.
 func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
+	return parsingMIMEBody(mailMsg, false)
+}
+
+// ParseMIMEBodyWithUTF8QPCorrection like ParseMIMEBody but will try to
+// correct bad email with invalid UTF8 quoted-printable so the email can be
+// successfully parsed.
+func ParseMIMEBodyWithUTF8QPCorrection(mailMsg *mail.Message) (*MIMEBody, error) {
+	return parsingMIMEBody(mailMsg, true)
+}
+
+func parsingMIMEBody(mailMsg *mail.Message, correctUTF8QP bool) (*MIMEBody, error) {
 	var gerr error
 	mimeMsg := &MIMEBody{
 		IsTextFromHTML: false,
@@ -193,7 +204,9 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 				bs  []byte
 			)
 			once.Do(func() {
-				bs, err = parseTextOnly(mimeMsg, mailMsg.Header.Get("Content-Transfer-Encoding"), charset, mailMsg.Body)
+				bs, err = parseTextOnly(mimeMsg,
+					mailMsg.Header.Get("Content-Transfer-Encoding"), charset,
+					correctUTF8QP, mailMsg.Body)
 			})
 			return bs, err
 		}
@@ -262,7 +275,7 @@ func ParseMIMEBody(mailMsg *mail.Message) (*MIMEBody, error) {
 		// Root Node of our tree
 		root := NewMIMEPart(nil, mediatype)
 		mimeMsg.Root = root
-		err = parseParts(root, mailMsg.Body, boundary)
+		err = parseParts(root, mailMsg.Body, boundary, correctUTF8QP)
 		if err != nil {
 			return nil, err
 		}

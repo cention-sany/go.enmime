@@ -115,16 +115,17 @@ func ParseMIME(reader *bufio.Reader) (MIMEPart, error) {
 		return nil, err
 	}
 	root := &memMIMEPart{header: header, contentType: mediatype}
-
+	correctUTF8QP := true
 	if strings.HasPrefix(mediatype, "multipart/") {
 		boundary := params["boundary"]
-		err = parseParts(root, reader, boundary)
+		err = parseParts(root, reader, boundary, correctUTF8QP)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		// Content is text or data, decode it
-		content, err := decodeSection(header.Get("Content-Transfer-Encoding"), params["charset"], reader)
+		content, err := decodeSection(header.Get("Content-Transfer-Encoding"),
+			params["charset"], correctUTF8QP, reader)
 		if err != nil {
 			return nil, err
 		}
@@ -137,11 +138,17 @@ func ParseMIME(reader *bufio.Reader) (MIMEPart, error) {
 const default_content_type = "text/plain; charset=US-ASCII"
 
 // parseParts recursively parses a mime multipart document.
-func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
-	var prevSibling *memMIMEPart
-
+func parseParts(parent *memMIMEPart, reader io.Reader, boundary string, correctUTF8QP bool) error {
+	var (
+		prevSibling *memMIMEPart
+		mr          *multipart.Reader
+	)
 	// Loop over MIME parts
-	mr := multipart.NewReader(reader, boundary)
+	if !correctUTF8QP {
+		mr = multipart.NewReader(reader, boundary)
+	} else {
+		mr = multipart.NewCorrectUTF8QPReader(reader, boundary)
+	}
 	for {
 		// mrp is golang's built in mime-part
 		mrp, err := mr.NextPart()
@@ -234,7 +241,7 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 		isText := strings.HasPrefix(mediatype, "text/")
 		if boundary != "" && !isText {
 			// Content is another multipart
-			err = parseParts(p, mrp, boundary)
+			err = parseParts(p, mrp, boundary, correctUTF8QP)
 			if err != nil {
 				return err
 			}
@@ -252,7 +259,7 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 			if isText {
 				txtCharset = p.charset
 			}
-			data, err := decodeSection(d, txtCharset, mrp)
+			data, err := decodeSection(d, txtCharset, correctUTF8QP, mrp)
 			if err != nil {
 				return err
 			}
@@ -266,13 +273,15 @@ func parseParts(parent *memMIMEPart, reader io.Reader, boundary string) error {
 // decodeSection attempts to decode the data from reader using the algorithm listed in
 // the Content-Transfer-Encoding header, returning the raw data if it does not known
 // the encoding type.
-func decodeSection(encoding, txtCharset string, reader io.Reader) ([]byte, error) {
+func decodeSection(encoding, txtCharset string, correctUTF8QP bool, reader io.Reader) ([]byte, error) {
 	// Default is to just read input into bytes
 	decoder := reader
 	switch strings.ToLower(encoding) {
 	case "quoted-printable":
-		txtCharset = strings.ToLower(txtCharset)
-		if txtCharset == "utf8" || txtCharset == "utf-8" {
+		if correctUTF8QP {
+			txtCharset = strings.ToLower(txtCharset)
+		}
+		if correctUTF8QP && (txtCharset == "utf8" || txtCharset == "utf-8") {
 			decoder = quotedprintable.NewUTF8Reader(reader)
 		} else {
 			decoder = quotedprintable.NewReader(reader)
