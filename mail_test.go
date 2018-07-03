@@ -145,6 +145,15 @@ func TestParseBrokenQuotedprintableUTF8(t *testing.T) {
 		t.Fatalf("Failed to parse MIME: %v", err)
 	}
 	assert.False(t, mime.IsTextFromHTML, "Expected text-from-HTML flag to be false")
+	assert.Equal(t, "<o:p></o:p></p>f\xC3\r\n\x83\xC2\xB6r order", mime.Text, "Plain text is not match")
+	assert.Equal(t, "<html><head>Laggon \xC3\x83 \xC2\r\n\xA4r fel</body></html>", mime.HTML, "HTML is not match")
+
+	msg = readMessage("broken-qp-utf8.raw")
+	mime, err = ParseMIMEBodyWithUTF8QPCorrection(msg)
+	if err != nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+	assert.False(t, mime.IsTextFromHTML, "Expected text-from-HTML flag to be false")
 	assert.Equal(t, "<o:p></o:p></p>f\xC3\x83\xC2\xB6r order", mime.Text, "Plain text is not match")
 	assert.Equal(t, "<html><head>Laggon \xC3\x83 \xC2\xA4r fel</body></html>", mime.HTML, "HTML is not match")
 }
