@@ -467,6 +467,46 @@ func TestAllBadMIME(t *testing.T) {
 		otherShouldHasCorrectContent)
 }
 
+func TestLongHeader(t *testing.T) {
+	msg := readMessage("broken-address-header.raw")
+	addrs, err := mail.ParseAddressList(msg.Header.Get("To"))
+	if err != nil {
+		t.Fatalf("Failed to parse To header field: %v", err)
+	} else if len(addrs) <= 0 {
+		t.Fatalf("Error: To address field is zero")
+	}
+	expected := [...]string{
+		`tester1.name@example.com`,
+		`"tester2 _ name"@example.se`,
+		`"tester3 s"@example.my`,
+		`tester4.name@example.co.uk`,
+		`tester5.name@example.com`,
+		`tester6@example.org`,
+		`"test e r7"@example.com`,
+		`tester8@example.com`,
+		`"te s ter9"@example.se`,
+		`tester10@example.com.my`,
+		`tester11.last@example.com`,
+	}
+	if len(addrs) != len(expected) {
+		t.Fatalf("Error parse address length (%d) not same as expected (%d)",
+			len(addrs), len(expected))
+	}
+	for i, a := range addrs {
+		if a.Address != expected[i] {
+			t.Errorf("Result #%d address %s not same as expected %s", i+1,
+				a.Address, expected[i])
+		}
+	}
+	mime, err := ParseMIMEBody(msg)
+	if err != nil && mime == nil {
+		t.Fatalf("Failed to parse MIME: %v", err)
+	}
+
+	assert.Equal(t, "</div>hello!</div>", mime.Text, "Plain text is not match")
+	assert.Equal(t, "</div>hello!</div>", mime.HTML, "Html text is not match")
+}
+
 // readMessage is a test utility function to fetch a mail.Message object.
 func readMessage(filename string) *mail.Message {
 	// Open test email for parsing
