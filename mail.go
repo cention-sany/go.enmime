@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"sync"
-	//"net/textproto"
-	//"net/mail"
 	"strings"
+	"sync"
 
 	"github.com/cention-sany/mime"
 	"github.com/cention-sany/net/mail"
@@ -17,8 +15,10 @@ import (
 
 // MIMEBody is the outer wrapper for MIME messages.
 type MIMEBody struct {
-	Text           string      // The plain text portion of the message
-	HTML           string      // The HTML portion of the message
+	Text           string // The plain text portion of the message
+	TextCharset    string
+	HTML           string // The HTML portion of the message
+	HTMLCharset    string
 	IsTextFromHTML bool        // Plain text was empty; down-converted HTML
 	Root           MIMEPart    // The top-level MIMEPart
 	Attachments    []MIMEPart  // All parts having a Content-Disposition of attachment
@@ -167,6 +167,7 @@ func parseTextOnly(mm *MIMEBody, cte, txtCharset string, correctUTF8QP bool, r i
 	}
 	// Handle plain ASCII text, content-type unspecified
 	mm.Text = string(bs)
+	mm.TextCharset = txtCharset
 	return bs, nil
 }
 
@@ -224,7 +225,7 @@ func parsingMIMEBody(mailMsg *mail.Message, correctUTF8QP bool) (*MIMEBody, erro
 				}
 				if charset != "" {
 					// Convert plain text to UTF8 if content type specified a charset
-					newStr, err := ConvertToUTF8String(mparams["charset"], bodyBytes)
+					newStr, err := ConvertToUTF8String(charset, bodyBytes)
 					if err != nil && newStr == "" {
 						return nil, err
 					} else {
@@ -232,6 +233,7 @@ func parsingMIMEBody(mailMsg *mail.Message, correctUTF8QP bool) (*MIMEBody, erro
 							gerr = err
 						}
 						mimeMsg.Text = newStr
+						mimeMsg.TextCharset = charset
 					}
 				} else if mediatype == "text/html" { // charset is empty, look in html body for charset
 					charset, err := charsetFromHTMLString(mimeMsg.Text)
@@ -245,13 +247,16 @@ func parsingMIMEBody(mailMsg *mail.Message, correctUTF8QP bool) (*MIMEBody, erro
 								gerr = err
 							}
 							mimeMsg.Text = newStr
+							mimeMsg.TextCharset = charset
 						}
 					}
 				}
 				if mediatype == "text/html" {
+					mimeMsg.HTMLCharset = mimeMsg.TextCharset
 					mimeMsg.HTML = mimeMsg.Text
 					// Empty Text will trigger html2text conversion below
 					mimeMsg.Text = ""
+					mimeMsg.TextCharset = ""
 				}
 			}
 		}
@@ -300,6 +305,9 @@ func parsingMIMEBody(mailMsg *mail.Message, correctUTF8QP bool) (*MIMEBody, erro
 				} else {
 					mimeMsg.Text += string(match.Content())
 				}
+				if mimeMsg.TextCharset == "" {
+					mimeMsg.TextCharset = match.Charset()
+				}
 			}
 		} else {
 			// multipart is of a mixed type
@@ -323,6 +331,9 @@ func parsingMIMEBody(mailMsg *mail.Message, correctUTF8QP bool) (*MIMEBody, erro
 				} else {
 					mimeMsg.Text += string(m.Content())
 				}
+				if mimeMsg.TextCharset == "" {
+					mimeMsg.TextCharset = m.Charset()
+				}
 			}
 		}
 
@@ -344,7 +355,9 @@ func parsingMIMEBody(mailMsg *mail.Message, correctUTF8QP bool) (*MIMEBody, erro
 			} else {
 				mimeMsg.HTML = string(match.Content())
 			}
-
+			if mimeMsg.HTMLCharset == "" {
+				mimeMsg.HTMLCharset = match.Charset()
+			}
 		}
 
 		// Locate attachments
@@ -384,6 +397,7 @@ func parsingMIMEBody(mailMsg *mail.Message, correctUTF8QP bool) (*MIMEBody, erro
 			mimeMsg.Text = ""
 			return mimeMsg, err
 		}
+		mimeMsg.TextCharset = mimeMsg.HTMLCharset
 	}
 	return mimeMsg, gerr
 }

@@ -269,7 +269,7 @@ func ConvertToUTF8String(charset string, textBytes []byte) (string, error) {
 	reader := transform.NewReader(input, csentry.e.NewDecoder())
 	output, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return "", err
+		return string(textBytes), err
 	}
 	return string(output), nil
 }
